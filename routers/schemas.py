@@ -21,7 +21,7 @@ class TodoBase(BaseModel):
   assigned_to: str
   due_date: date
   is_completed: bool
-  creator_id: int
+  #creator_id: int
   group_text: str
   group_id: int
 

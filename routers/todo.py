@@ -2,7 +2,7 @@ from auth.oauth2 import get_current_user
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
-from routers.schemas import TodoBase, TodoDisplay
+from routers.schemas import TodoBase, TodoDisplay, UserBase
 from db.database import get_db
 from db import db_todo
 from typing import List
@@ -21,7 +21,7 @@ def create(request: TodoBase, db: Session = Depends(get_db), current_user: UserA
   if not request.task:
     raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
               detail="Task cannot be Empty")
-  return db_todo.create(db, request)
+  return db_todo.create(db, request, current_user.id)
 
 
 @router.get('/all', response_model=List[TodoDisplay])
@@ -29,11 +29,15 @@ def todos(db: Session = Depends(get_db)):
   return db_todo.get_all_todos(db)
 
 
+@router.put('/update/{id}')
+def update(id:int,request: TodoBase, db: Session = Depends(get_db), creator_id: UserAuth = Depends(get_current_user)):
+   return db_todo.update(db,request,id,creator_id)
+
 
 @router.get('/delete/{id}')
 def delete_todo(id: int, db: Session = Depends(get_db), current_user: UserAuth = Depends(get_current_user)):
   return db_todo.delete(db, id, current_user.id)
 
 @router.get('/delete_group/{group_id}')
-def delete_todo_group(group_id: int, db: Session = Depends(get_db)):#, current_user: UserAuth = Depends(get_current_user)):
-    return db_todo.delete_group(db, group_id)#,current_user.id)
+def delete_todo_group(group_id: int, db: Session = Depends(get_db) ,current_user: UserAuth = Depends(get_current_user)):
+    return db_todo.delete_group(db, group_id, current_user.id)
