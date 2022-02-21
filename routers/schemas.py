@@ -8,7 +8,6 @@ class UserBase(BaseModel):
   username: str
   email: str
   password: str
-
 # for user display
 class UserDisplay(BaseModel):
   username: str
