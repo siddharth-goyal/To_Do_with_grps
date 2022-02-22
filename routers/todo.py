@@ -2,7 +2,7 @@ from auth.oauth2 import get_current_user
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
-from routers.schemas import TodoBase, TodoDisplay, UserBase
+from routers.schemas import TodoBase, TodoDisplay, UserBase ,Update_TodoBase,Update_TodoDisplay
 from db.database import get_db
 from db import db_todo
 from typing import List
@@ -23,16 +23,20 @@ def create(request: TodoBase, db: Session = Depends(get_db), current_user: UserA
               detail="Task cannot be Empty")
   return db_todo.create(db, request, current_user.id)
 
+@router.put('/update/{id}',response_model=Update_TodoDisplay)
+def update_todo(id: int,request: Update_TodoBase, db: Session = Depends(get_db), current_user: UserAuth = Depends(get_current_user)):
+  if not id:
+    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+              detail="ID cannot be Empty")
+  if not request.task:
+    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+              detail="Task cannot be Empty")
+  return db_todo.update_todo(id, db, request,current_user.id)
+
 
 @router.get('/all', response_model=List[TodoDisplay])
 def todos(db: Session = Depends(get_db)):
   return db_todo.get_all_todos(db)
-
-
-@router.put('/update/{id}')
-def update(id:int,request: TodoBase, db: Session = Depends(get_db), creator_id: UserAuth = Depends(get_current_user)):
-   return db_todo.update(db,request,id,creator_id)
-
 
 @router.get('/delete/{id}')
 def delete_todo(id: int, db: Session = Depends(get_db), current_user: UserAuth = Depends(get_current_user)):
