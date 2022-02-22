@@ -3,7 +3,7 @@ from tkinter import FIRST
 from tokenize import group
 from fastapi import HTTPException, status
 from sqlalchemy import delete
-from routers.schemas import TodoBase
+from routers.schemas import TodoBase,Update_TodoDisplay,Update_TodoBase
 from sqlalchemy.orm.session import Session
 from db.models import DbTodo
 
@@ -24,26 +24,26 @@ def create(db: Session, request: TodoBase, creator_id : int):
   db.refresh(new_todo)
   return new_todo
 
-def update(id :int ,db: Session, request : TodoBase, creator_id :int):
-  get_id= id
-  u_id =creator_id
-  delete(db, id, creator_id)
+def update_todo(id: int, db: Session, request:Update_TodoBase, current_user: int):
+  u_id = db.query(DbTodo).filter(DbTodo.id == id).first()
+  if not u_id:
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+          detail=f'ToDo with id {id} not found')
+  if u_id.user_id != current_user:
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+          detail='Only todo creator can update task')
 
-  new_todo = DbTodo(
-    id = get_id,
-    task = request.task,
-    assigned_to = request.assigned_to,
-    due_date = request.due_date,
-    is_completed = request.is_completed,
-    user_id = u_id,
-    group_text = request.group_text,
-    group_id =request.group_id
-  )
-  db.add(new_todo)
+
+  db.query(DbTodo).filter(DbTodo.id == id).update({
+    "task" : f"{request.task}",
+    "assigned_to" : f"{request.assigned_to}",
+    "due_date" : f"{request.due_date}",
+    "is_completed" : f"{request.is_completed}",
+    "group_text" : f"{request.group_text}",
+    "group_id" : f"{request.group_id}"
+  })
   db.commit()
-  db.refresh(new_todo)
-  return new_todo
-
+  return u_id
 
 def get_all_todos(db: Session):
   return db.query(DbTodo).all()
